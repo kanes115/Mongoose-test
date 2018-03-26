@@ -5,10 +5,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("escalus/include/escalus_xmlns.hrl").
 -include_lib("exml/include/exml.hrl").
+-include("muc_helper.hrl").
 
 -define(NS_PUSH,                <<"urn:xmpp:push:0">>).
--define(NS_XDATA,               <<"jabber:x:data">>).
--define(NS_PUBSUB_PUB_OPTIONS,  <<"http://jabber.org/protocol/pubsub#publish-options">>).
 -define(PUSH_FORM_TYPE,         <<"urn:xmpp:push:summary">>).
 
 -define(PUBSUB_SUB_DOMAIN, "push").
@@ -336,33 +335,6 @@ publish_iq(Client, Node, Content, Options) ->
     #xmlel{children = [#xmlel{} = PubsubEl]} = Publish,
     NewPubsubEl = PubsubEl#xmlel{children = PubsubEl#xmlel.children ++ [OptionsEl]},
     Publish#xmlel{children = [NewPubsubEl]}.
-
-disable_stanza(JID, undefined) ->
-    disable_stanza([
-                       {<<"xmlns">>, <<"urn:xmpp:push:0">>},
-                       {<<"jid">>, JID}
-                   ]);
-disable_stanza(JID, Node) ->
-    disable_stanza([
-                       {<<"xmlns">>, <<"urn:xmpp:push:0">>},
-                       {<<"jid">>, JID},
-                       {<<"node">>, Node}
-                   ]).
-disable_stanza(JID) when is_binary(JID) ->
-    disable_stanza(JID, undefined);
-disable_stanza(Attrs) when is_list(Attrs) ->
-    escalus_stanza:iq(<<"set">>, [#xmlel{name = <<"disable">>, attrs = Attrs}]).
-
-enable_stanza(JID, Node) ->
-    enable_stanza(JID, Node, undefined).
-enable_stanza(JID, Node, FormFields) ->
-    enable_stanza(JID, Node, FormFields, ?NS_PUBSUB_PUB_OPTIONS).
-enable_stanza(JID, Node, FormFields, FormType) ->
-    escalus_stanza:iq(<<"set">>, [#xmlel{name = <<"enable">>, attrs = [
-        {<<"xmlns">>, <<"urn:xmpp:push:0">>},
-        {<<"jid">>, JID},
-        {<<"node">>, Node}
-    ], children = maybe_form(FormFields, FormType)}]).
 
 maybe_form(undefined, _FormType) ->
     [];
