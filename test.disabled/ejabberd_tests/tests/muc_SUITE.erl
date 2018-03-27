@@ -36,7 +36,18 @@
          stanza_to_room/2,
          stanza_to_room/3,
          room_address/1,
-         room_address/2]).
+         room_address/2,
+         fresh_room_name/0,
+         fresh_room_name/1,
+         disco_features_story/1,
+         given_fresh_room/3,
+         given_fresh_spec/2,
+         room_address/2,
+         room_address/1,
+         stanza_get_features/0,
+         has_features/1,
+         disco_service_story/1
+         ]).
 
 -define(MUC_HOST, <<"muc.localhost">>).
 -define(MUC_CLIENT_HOST, <<"localhost/res1">>).
@@ -2936,22 +2947,10 @@ kicked_after_sending_malformed_presence(Config1) ->
 %%--------------------------------------------------------------------
 
 disco_service(Config) ->
-    escalus:fresh_story(Config, [{alice, 1}], fun(Alice) ->
-        Server = escalus_client:server(Alice),
-        escalus:send(Alice, escalus_stanza:service_discovery(Server)),
-        Stanza = escalus:wait_for_stanza(Alice),
-        escalus:assert(has_service, [muc_host()], Stanza),
-        escalus:assert(is_stanza_from,
-                       [ct:get_config({hosts, mim, domain})], Stanza)
-    end).
+    disco_service_story(Config).
 
 disco_features(Config) ->
-    escalus:fresh_story(Config, [{alice, 1}], fun(Alice) ->
-        escalus:send(Alice, stanza_get_features()),
-        Stanza = escalus:wait_for_stanza(Alice),
-        has_features(Stanza),
-        escalus:assert(is_stanza_from, [muc_host()], Stanza)
-    end).
+    disco_features_story(Config).
 
 disco_rooms(Config) ->
     escalus:fresh_story(Config, [{alice, 1}], fun(Alice) ->
@@ -4379,7 +4378,7 @@ wait_for_mam_result(RoomName, Client, Msg) ->
     Props = [{mam_ns, mam_helper:mam_ns_binary_v04()},
              {data_form, true}],
     QueryStanza = mam_helper:stanza_archive_request(Props, <<"q1">>),
-    escalus:send(Client, muc_helper:stanza_to_room(QueryStanza, RoomName)),
+    escalus:send(Client, stanza_to_room(QueryStanza, RoomName)),
     S = escalus:wait_for_stanza(Client, ?WAIT_TIMEOUT),
     M = exml_query:path(S, [{element, <<"result">>},
                             {element, <<"forwarded">>},
@@ -4944,15 +4943,6 @@ stanza_get_rooms() ->
     escalus_stanza:setattr(escalus_stanza:iq_get(?NS_DISCO_ITEMS, []), <<"to">>,
         muc_host()).
 
-stanza_get_features() ->
-    %% <iq from='hag66@shakespeare.lit/pda'
-    %%     id='lx09df27'
-    %%     to='chat.shakespeare.lit'
-    %%     type='get'>
-    %%  <query xmlns='http://jabber.org/protocol/disco#info'/>
-    %% </iq>
-    escalus_stanza:setattr(escalus_stanza:iq_get(?NS_DISCO_INFO, []), <<"to">>,
-        muc_host()).
 
 stanza_get_services(Config) ->
     %% <iq from='hag66@shakespeare.lit/pda'
@@ -5193,25 +5183,6 @@ has_room(JID, #xmlel{children = [ #xmlel{children = Rooms} ]}) ->
 count_rooms(#xmlel{children = [ #xmlel{children = Rooms} ]}, N) ->
     ?assert_equal(N, length(Rooms)).
 
-has_features(#xmlel{children = [ Query ]}) ->
-    %%<iq from='chat.shakespeare.lit'
-    %%  id='lx09df27'
-    %%  to='hag66@shakespeare.lit/pda'
-    %%  type='result'>
-    %%  <query xmlns='http://jabber.org/protocol/disco#info'>
-    %%    <identity
-    %%      category='conference'
-    %%      name='Shakespearean Chat Service'
-    %%      type='text'/>
-    %%      <feature var='http://jabber.org/protocol/muc'/>
-    %%  </query>
-    %%</iq>
-
-    Identity = exml_query:subelement(Query, <<"identity">>),
-    <<"conference">> = exml_query:attr(Identity, <<"category">>),
-    true = lists:member(?NS_MUC, exml_query:paths(Query, [{element, <<"feature">>},
-                                                          {attr, <<"var">>}])).
-
 has_muc(#xmlel{children = [ #xmlel{children = Services} ]}) ->
     %% should be along the lines of (taken straight from the XEP):
     %% <iq from='shakespeare.lit'
@@ -5270,21 +5241,6 @@ connect_fresh_user(Spec) ->
     Server = proplists:get_value(server, Spec),
     JID = <<Username/binary,"@",Server/binary,"/escalus-default-resource">>,
     User#client{jid = JID}.
-
-given_fresh_spec(Config, User) ->
-    NewConfig = escalus_fresh:create_users(Config, [{User, 1}]),
-    escalus_users:get_userspec(NewConfig, User).
-
-given_fresh_room(Config, UserSpec, RoomOpts) ->
-    Username = proplists:get_value(username, UserSpec),
-    RoomName = fresh_room_name(Username),
-    start_room(Config, {user, UserSpec}, RoomName, Username, RoomOpts).
-
-fresh_room_name(Username) ->
-    escalus_utils:jid_to_lower(<<"room-", Username/binary>>).
-
-fresh_room_name() ->
-    fresh_room_name(base16:encode(crypto:strong_rand_bytes(5))).
 
 fresh_nick_name(Prefix) ->
     <<Prefix/binary, (fresh_nick_name())/binary>>.

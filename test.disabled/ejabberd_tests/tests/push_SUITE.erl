@@ -5,17 +5,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("escalus/include/escalus_xmlns.hrl").
 -include_lib("exml/include/exml.hrl").
-
--define(NS_PUSH,                <<"urn:xmpp:push:0">>).
--define(NS_XDATA,               <<"jabber:x:data">>).
--define(NS_PUBSUB_PUB_OPTIONS,  <<"http://jabber.org/protocol/pubsub#publish-options">>).
--define(PUSH_FORM_TYPE,         <<"urn:xmpp:push:summary">>).
--define(MUCHOST,                <<"muclight.@HOST@">>).
-
--define(PUSH_OPTS,
-    [
-        {backend, mnesia}
-    ]).
+-include("push_helper.hrl").
 
 -import(muc_light_helper,
     [

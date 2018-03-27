@@ -21,6 +21,10 @@
 -export([ensure_muc_clean/0]).
 -export([successful_rpc/3]).
 -export([logout_user/2]).
+-export([get_bjid/1]).
+
+-include_lib("escalus/include/escalus.hrl").
+-include_lib("exml/include/exml_stream.hrl").
 
 -define(RPC(M, F, A), escalus_ejabberd:rpc(M, F, A)).
 
@@ -261,3 +265,8 @@ logout_user(Config, User) ->
                     ct:fail({logout_user_failed, {Username, Resource, Pid}})
             end
     end.
+
+get_bjid(UserSpec) ->
+    User = proplists:get_value(username, UserSpec),
+    Server = proplists:get_value(server, UserSpec),
+    <<User/binary,"@",Server/binary>>.

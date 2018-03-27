@@ -350,8 +350,8 @@ test_two_way_pm(Alice, Eve) ->
                    FromEve).
 
 test_muc_conversation_on_one_host(Config0) ->
-    AliceSpec = muc_SUITE:given_fresh_spec(Config0, alice),
-    Config = muc_SUITE:given_fresh_room(Config0, AliceSpec, []),
+    AliceSpec = muc_helper:given_fresh_spec(Config0, alice),
+    Config = muc_helper:given_fresh_room(Config0, AliceSpec, []),
     escalus:fresh_story(
       Config, [{eve, 1}],
       fun(Eve) ->
@@ -381,8 +381,8 @@ test_muc_conversation_on_one_host(Config0) ->
     muc_helper:destroy_room(Config).
 
 test_muc_conversation_history(Config0) ->
-    AliceSpec = muc_SUITE:given_fresh_spec(Config0, alice),
-    Config = muc_SUITE:given_fresh_room(Config0, AliceSpec, []),
+    AliceSpec = muc_helper:given_fresh_spec(Config0, alice),
+    Config = muc_helper:given_fresh_room(Config0, AliceSpec, []),
     escalus:fresh_story(
       Config, [{eve, 1}],
       fun(Eve) ->
@@ -429,7 +429,7 @@ test_component_on_one_host(Config) ->
     ComponentConfig = [{server, <<"localhost">>}, {host, <<"localhost">>}, {password, <<"secret">>},
                        {port, 8888}, {component, <<"test_service">>}],
 
-    {Comp, Addr, _Name} = component_SUITE:connect_component(ComponentConfig),
+    {Comp, Addr, _Name} = component_helper:connect_component(ComponentConfig),
 
     Story = fun(User) ->
                     Msg1 = escalus_stanza:chat_to(Addr, <<"Hi2!">>),
@@ -457,8 +457,8 @@ test_components_in_different_regions(_Config) ->
     Component1Config = [{port, 8888}, {component, <<"service1">>} | ComponentCommonConfig],
     Component2Config = [{port, 9990}, {component, <<"service2">>} | ComponentCommonConfig],
 
-    {Comp1, Addr1, _Name1} = component_SUITE:connect_component(Component1Config),
-    {Comp2, Addr2, _Name2} = component_SUITE:connect_component(Component2Config),
+    {Comp1, Addr1, _Name1} = component_helper:connect_component(Component1Config),
+    {Comp2, Addr2, _Name2} = component_helper:connect_component(Component2Config),
 
     Msg1 = escalus_stanza:from(escalus_stanza:chat_to(Addr2, <<"Hi from 1!">>), Addr1),
     escalus:send(Comp1, Msg1),
@@ -474,8 +474,8 @@ test_component_disconnect(Config) ->
     ComponentConfig = [{server, <<"localhost">>}, {host, <<"localhost">>}, {password, <<"secret">>},
                        {port, 8888}, {component, <<"test_service">>}],
 
-    {Comp, Addr, _Name} = component_SUITE:connect_component(ComponentConfig),
-    component_SUITE:disconnect_component(Comp, Addr),
+    {Comp, Addr, _Name} = component_helper:connect_component(ComponentConfig),
+    component_helper:disconnect_component(Comp, Addr),
 
     Story = fun(User) ->
                     escalus:send(User, escalus_stanza:chat_to(Addr, <<"Hi!">>)),
@@ -518,7 +518,7 @@ test_pm_with_disconnection_on_other_server(Config) ->
       end).
 
 test_pm_with_graceful_reconnection_to_different_server(Config) ->
-    EveSpec = muc_SUITE:given_fresh_spec(Config, eve),
+    EveSpec = muc_helper:given_fresh_spec(Config, eve),
     escalus:create_users(Config, [{eve, [{port, 5222} | EveSpec]}]),
     escalus:fresh_story(
       Config, [{alice, 1}],
@@ -551,7 +551,7 @@ test_pm_with_graceful_reconnection_to_different_server(Config) ->
 
 test_pm_with_ungraceful_reconnection_to_different_server(Config0) ->
     Config = escalus_users:update_userspec(Config0, eve, stream_management, true),
-    EveSpec = muc_SUITE:given_fresh_spec(Config, eve),
+    EveSpec = muc_helper:given_fresh_spec(Config, eve),
     escalus:create_users(Config, [{eve, [{port, 5222} | EveSpec]}]),
     escalus:fresh_story(
       Config, [{alice, 1}],
@@ -560,7 +560,7 @@ test_pm_with_ungraceful_reconnection_to_different_server(Config0) ->
                              authenticate, bind, session, stream_resumption],
 
               {ok, Eve0, _} = escalus_connection:start(EveSpec, StepsWithSM),
-              Eve = Eve0#client{jid = sm_SUITE:get_bjid(EveSpec)},
+              Eve = Eve0#client{jid = mongoose_helper:get_bjid(EveSpec)},
               escalus_story:send_initial_presence(Eve),
               escalus_client:wait_for_stanza(Eve),
 
@@ -609,11 +609,11 @@ test_component_unregister(_Config) ->
     ComponentConfig = [{server, <<"localhost">>}, {host, <<"localhost">>}, {password, <<"secret">>},
                        {port, 8888}, {component, <<"test_service">>}],
 
-    {Comp, Addr, _Name} = component_SUITE:connect_component(ComponentConfig),
+    {Comp, Addr, _Name} = component_helper:connect_component(ComponentConfig),
     ?assertMatch({ok, _}, rpc(europe_node1, mod_global_distrib_mapping, for_domain,
                               [<<"test_service.localhost">>])),
 
-    component_SUITE:disconnect_component(Comp, Addr),
+    component_helper:disconnect_component(Comp, Addr),
 
     ?assertEqual(error, rpc(europe_node1, mod_global_distrib_mapping, for_domain,
                             [<<"test_service.localhost">>])).
@@ -725,7 +725,7 @@ test_update_senders_host_by_ejd_service(Config) ->
     ComponentConfig = [{server, <<"localhost">>}, {host, <<"localhost">>}, {password, <<"secret">>},
                        {port, 8888}, {component, <<"test_service">>}],
 
-    {Comp, Addr, _Name} = component_SUITE:connect_component(ComponentConfig),
+    {Comp, Addr, _Name} = component_helper:connect_component(ComponentConfig),
 
     escalus:fresh_story(
       Config, [{eve, 1}],
