@@ -315,7 +315,7 @@ register_in_cluster(Config) ->
         end),
 
     disconnect_component(Comp1, Addr1),
-    component(Comp2, Addr2),
+    disconnect_component(Comp2, Addr2),
     disconnect_component(Comp_on_2, Addr_on_2),
     ok.
 
